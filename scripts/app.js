@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const searchInput = document.getElementById('searchInput');
     let books = [];
 
-    // عناصر واجهة المستخدم
     const UI = {
         loading: `
             <div class="loading-container">
@@ -33,39 +32,56 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>`
     };
 
-    function displayResults(booksToDisplay) {
-        if (!booksToDisplay || booksToDisplay.length === 0) {
-            resultsContainer.innerHTML = UI.noResults;
-            return;
-        }
+   let page = 1;
+const pageSize = 50;
+let currentBooks = [];
 
-        resultsContainer.innerHTML = booksToDisplay.map(book => `
-            <div class="book-card">
-                <div class="book-header">${book['العنوان'] || 'عنوان غير متوفر'}</div>
-                <div class="book-body">
-                    <p>
-                        <span class="field-label">رقم الطلب:</span>
-                        <span class="field-value">${book['رقم الطلب'] || 'غير معروف'}</span>
-                    </p>
-                    <p>
-                        <span class="field-label">الفئة:</span>
-                        <span class="field-value">${book['الفئة'] || 'غير معروف'}</span>
-                    </p>
-
-                    <p>
-                        <span class="field-label">الفئة:</span>
-                        <span class="field-value">${book['الصنف'] || 'غير معروف'}</span>
-                    </p>
-
-                    ${book['الترميز العمودي'] ? `
-                    <p>
-                        <span class="field-label">الترميز العمودي:</span>
-                        <span class="field-value">${book['الترميز العمودي']}</span>
-                    </p>` : ''}
-                </div>
-            </div>
-        `).join('');
+function displayResults(booksToDisplay, reset = true) {
+    if (reset) {
+        resultsContainer.innerHTML = '';
+        page = 1;
+        currentBooks = booksToDisplay;
     }
+
+    if (!currentBooks || currentBooks.length === 0) {
+        resultsContainer.innerHTML = UI.noResults;
+        return;
+    }
+
+    const start = (page - 1) * pageSize;
+    const end = page * pageSize;
+    const booksPage = currentBooks.slice(start, end);
+
+    booksPage.forEach(book => {
+        const card = document.createElement('div');
+        card.className = "book-card";
+        card.innerHTML = `
+            <div class="book-header">${book['العنوان'] || 'عنوان غير متوفر'}</div>
+            <div class="book-body">
+                <p><span class="field-label">رقم الطلب:</span>
+                   <span class="field-value">${book['رقم الطلب'] || 'غير معروف'}</span></p>
+                <p><span class="field-label">الفئة:</span>
+                   <span class="field-value">${book['الفئة'] || 'غير معروف'}</span></p>
+                <p><span class="field-label">الصنف:</span>
+                   <span class="field-value">${book['الصنف'] || 'غير معروف'}</span></p>
+                ${book['الترميز العمودي'] ? `
+                <p><span class="field-label">الترميز العمودي:</span>
+                   <span class="field-value">${book['الترميز العمودي']}</span></p>` : ''}
+            </div>
+        `;
+        resultsContainer.appendChild(card);
+    });
+}
+
+window.addEventListener('scroll', () => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+        if (page * pageSize < currentBooks.length) {
+            page++;
+            displayResults(currentBooks, false);
+        }
+    }
+});
+
 
     async function loadData() {
         try {
